@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/state-view';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import {
+  fetchDocuments,
   fetchPhotos,
   fetchWorkOrder,
   getSignedUrl,
@@ -21,11 +22,12 @@ import {
   uploadPhoto,
   type Customer,
 } from '@/features/work-orders/api';
+import { DocStatusBadge } from '@/features/work-orders/document-summary';
 import { PhotoGrid } from '@/features/work-orders/photo-grid';
 import { errorMessage, useQuery } from '@/hooks/use-query';
 import { useScheduleLabels } from '@/hooks/use-schedule-labels';
 import { useTheme } from '@/hooks/use-theme';
-import { formatDuration, formatSchedule, formatTime } from '@/lib/format';
+import { formatDuration, formatMoney, formatSchedule, formatTime } from '@/lib/format';
 import { useT } from '@/providers/preferences-provider';
 
 export default function WorkOrderDetailScreen() {
@@ -36,6 +38,7 @@ export default function WorkOrderDetailScreen() {
 
   const order = useQuery(() => fetchWorkOrder(id), [id]);
   const photos = useQuery(() => fetchPhotos(id), [id]);
+  const docs = useQuery(() => fetchDocuments(id), [id]);
   const signatureUrl = useQuery(
     async () => (order.data?.signature_path ? getSignedUrl('signatures', order.data.signature_path) : null),
     [order.data?.signature_path],
@@ -45,8 +48,9 @@ export default function WorkOrderDetailScreen() {
   const [starting, setStarting] = useState(false);
   const [uploading, setUploading] = useState(0);
 
-  // Refresh after returning from the "Complete job" modal.
+  // Refresh after returning from the "Complete job" / "Scan invoice" modals.
   const { reload: reloadOrder } = order;
+  const { reload: reloadDocs } = docs;
   const firstFocus = useRef(true);
   useFocusEffect(
     useCallback(() => {
@@ -55,7 +59,8 @@ export default function WorkOrderDetailScreen() {
         return;
       }
       reloadOrder();
-    }, [reloadOrder]),
+      reloadDocs();
+    }, [reloadOrder, reloadDocs]),
   );
 
   async function handleStart() {
@@ -208,6 +213,43 @@ export default function WorkOrderDetailScreen() {
                 onPress={() => handleAddPhoto('library')}
               />
             </View>
+          ) : null}
+        </Card>
+
+        {/* AI-scanned supplier documents */}
+        <Card title={`${t('detail.documents')}${docs.data?.length ? ` (${docs.data.length})` : ''}`}>
+          {docs.status === 'loading' ? (
+            <Skeleton height={56} radius={Radius.md} />
+          ) : docs.data?.length ? (
+            docs.data.map((d) => (
+              <View key={d.id} style={[styles.docRow, { borderColor: theme.border }]}>
+                <View style={[styles.docIcon, { backgroundColor: theme.primarySoft }]}>
+                  <Ionicons name="document-text-outline" size={18} color={theme.primary} />
+                </View>
+                <View style={styles.flex}>
+                  <AppText variant="bodyStrong" numberOfLines={1}>
+                    {d.vendor_name ?? t(`doc.${d.status}`)}
+                  </AppText>
+                  <AppText variant="caption" color="textSecondary">
+                    {d.invoice_number ? `#${d.invoice_number} · ` : ''}
+                    {formatMoney(d.total_amount, d.currency ?? 'USD')}
+                  </AppText>
+                </View>
+                <DocStatusBadge status={d.status} />
+              </View>
+            ))
+          ) : (
+            <AppText variant="caption" color="textMuted">
+              {t('detail.noDocuments')}
+            </AppText>
+          )}
+          {canEdit ? (
+            <Button
+              title={t('detail.scanInvoice')}
+              icon="scan"
+              variant="secondary"
+              onPress={() => router.push({ pathname: '/orders/[id]/scan', params: { id } })}
+            />
           ) : null}
         </Card>
 
@@ -366,6 +408,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     borderWidth: 1,
   },
+  docRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.sm },
+  docIcon: { width: 36, height: 36, borderRadius: Radius.sm + 2, alignItems: 'center', justifyContent: 'center' },
   signature: { height: 160, borderRadius: Radius.md, backgroundColor: '#FFFFFF' },
   actionBar: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopWidth: 1 },
   actionInner: {

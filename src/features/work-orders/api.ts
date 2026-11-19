@@ -133,3 +133,56 @@ export async function getSignedUrl(bucket: 'signatures' | 'work-order-photos' | 
 function uniqueName(ext: string) {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 }
+
+// ---------------------------------------------------------------- AI document scanning
+export type ScannedDocument = Tables<'scanned_documents'>;
+export type LineItem = { description?: string; quantity?: number | null; unit_price?: number | null; amount?: number | null };
+
+export async function fetchDocuments(orderId: string): Promise<ScannedDocument[]> {
+  const { data, error } = await supabase
+    .from('scanned_documents')
+    .select('*')
+    .eq('work_order_id', orderId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchDocument(id: string): Promise<ScannedDocument> {
+  const { data, error } = await supabase.from('scanned_documents').select('*').eq('id', id).single();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Scan flow: upload the photo to the private `documents` bucket, register it as
+ * `processing`, then ask the `extract-document` Edge Function to read it.
+ * Returns the document id; the extracted row is read back with `fetchDocument`.
+ */
+export async function scanDocument(
+  orderId: string,
+  asset: { uri: string; mimeType?: string | null },
+  onStep?: (step: 'uploading' | 'reading') => void,
+): Promise<string> {
+  onStep?.('uploading');
+  const contentType = asset.mimeType ?? 'image/jpeg';
+  const ext = contentType.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg';
+  const path = `${orderId}/${uniqueName(ext)}`;
+  const body = await (await fetch(asset.uri)).arrayBuffer();
+
+  const { error: uploadError } = await supabase.storage.from('documents').upload(path, body, { contentType });
+  if (uploadError) throw uploadError;
+
+  const { data: doc, error } = await supabase
+    .from('scanned_documents')
+    .insert({ work_order_id: orderId, storage_path: path })
+    .select('id')
+    .single();
+  if (error) throw error;
+
+  onStep?.('reading');
+  const { error: fnError } = await supabase.functions.invoke('extract-document', { body: { document_id: doc.id } });
+  // A failed extraction is still a saved document (status `failed`) — the caller shows it.
+  if (fnError) console.warn('[scan] extraction failed', fnError.message);
+  return doc.id;
+}

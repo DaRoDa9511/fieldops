@@ -301,6 +301,13 @@ function DocumentRow({ doc, onChange }: { doc: ScannedDocument; onChange: () => 
           </p>
         </div>
         <span className="text-sm font-semibold">{formatMoney(doc.total_amount, doc.currency ?? 'USD')}</span>
+        {(doc.ai_raw as { mode?: string } | null)?.mode === 'demo' ? (
+          <span
+            title={t('detail.demoHint')}
+            className="hidden rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 sm:inline dark:bg-amber-500/10 dark:text-amber-300">
+            {t('detail.demo')}
+          </span>
+        ) : null}
         <DocStatusBadge status={doc.status} />
         <ChevronDown className={`size-4 text-slate-400 transition ${open ? 'rotate-180' : ''}`} />
       </button>

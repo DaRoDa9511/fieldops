@@ -166,6 +166,8 @@ export const en = {
   'detail.confidence': 'AI confidence',
   'detail.original': 'Original',
   'detail.verify': 'Mark verified',
+  'detail.demo': 'Demo AI',
+  'detail.demoHint': 'Simulated extraction — set the ANTHROPIC_API_KEY secret to enable live AI.',
 
   'customers.title': 'Customers',
   'customers.count': '{n} customers',
@@ -379,6 +381,8 @@ export const es: Dictionary = {
   'detail.confidence': 'Confianza IA',
   'detail.original': 'Original',
   'detail.verify': 'Marcar verificado',
+  'detail.demo': 'IA demo',
+  'detail.demoHint': 'Extracción simulada — configura el secreto ANTHROPIC_API_KEY para activar la IA real.',
 
   'customers.title': 'Clientes',
   'customers.count': '{n} clientes',

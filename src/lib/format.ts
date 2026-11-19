@@ -54,3 +54,12 @@ export function initials(name: string | null | undefined) {
     .slice(0, 2)
     .toUpperCase();
 }
+
+export function formatMoney(value: number | null | undefined, currency = 'USD'): string {
+  if (value == null) return '—';
+  try {
+    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(value);
+  } catch {
+    return `${value.toFixed(2)} ${currency}`;
+  }
+}

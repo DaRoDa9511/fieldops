@@ -19,7 +19,8 @@ export default function AppLayout() {
       <Stack.Screen name="index" options={{ headerShown: false, title: t('orders.title') }} />
       <Stack.Screen name="orders/[id]/index" options={{ title: '', headerBackTitle: t('detail.back') }} />
       <Stack.Screen name="orders/[id]/complete" options={{ presentation: 'modal', title: t('complete.title') }} />
-      <Stack.Screen name="profile" options={{ presentation: 'modal', headerShown: false, title: t('profile.title') }} />
+      <Stack.Screen name="orders/[id]/scan" options={{ presentation: 'modal', title: t('scan.title') }} />
+      <Stack.Screen name="profile"options={{ presentation: 'modal', headerShown: false, title: t('profile.title') }} />
     </Stack>
   );
 }
