@@ -2,7 +2,9 @@
 
 Copy the English version into your Upwork portfolio item. Suggested media order:
 `docs/images/showcase.png` (cover) → `docs/images/demo.gif` → `admin-dashboard-dark.png` →
-`mobile-scan-result.png` → `admin-order-detail.png`. Link: https://github.com/DaRoDa9511/fieldops
+`mobile-scan-result.png` → `admin-order-detail.png`.
+Links: code https://github.com/DaRoDa9511/fieldops · live demo https://fieldops-admin-eight.vercel.app
+(login `olivia.bennett@fieldops.demo` / `FieldOps#2026`).
 
 ---
 

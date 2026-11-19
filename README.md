@@ -16,6 +16,11 @@ manage everything from a **web dashboard that updates live**; and supplier invoi
 **read by AI** straight from a phone photo — no re-typing.
 
 <p align="center">
+  <a href="https://fieldops-admin-eight.vercel.app"><b>🚀 Live demo — dispatcher dashboard</b></a>
+  &nbsp;·&nbsp; login <code>olivia.bennett@fieldops.demo</code> / <code>FieldOps#2026</code>
+</p>
+
+<p align="center">
   <img src="docs/images/demo.gif" alt="Demo: technician starts a job, scans an invoice and gets the customer's signature while the dispatcher dashboard updates live" width="100%" />
   <br/><sub>Technician app (left) and dispatcher dashboard (right) — every change on the phone appears on the dashboard instantly.</sub>
 </p>
@@ -146,6 +151,7 @@ flowchart LR
 ## Demo credentials
 
 All demo accounts use the password **`FieldOps#2026`** (seed data — demo only).
+Live admin panel: **https://fieldops-admin-eight.vercel.app** (auto-deployed from `main` by Vercel).
 
 | Role | Email | Use it in |
 |---|---|---|
