@@ -14,11 +14,13 @@ import { SignaturePad, type SignaturePadHandle } from '@/features/work-orders/si
 import { errorMessage, useQuery } from '@/hooks/use-query';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDuration } from '@/lib/format';
+import { useT } from '@/providers/preferences-provider';
 
 /** Modal: technician notes + customer signature → marks the order as completed. */
 export default function CompleteWorkOrderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
+  const t = useT();
   const pad = useRef<SignaturePadHandle>(null);
 
   const order = useQuery(() => fetchWorkOrder(id), [id]);
@@ -33,7 +35,7 @@ export default function CompleteWorkOrderScreen() {
 
   async function handleComplete() {
     if (!pad.current || pad.current.isEmpty()) {
-      setError('Ask the customer to sign before completing the job.');
+      setError(t('complete.needSignature'));
       return;
     }
     setError(null);
@@ -61,15 +63,15 @@ export default function CompleteWorkOrderScreen() {
                 <AppText variant="bodyStrong">{o.title}</AppText>
                 <AppText variant="caption" color="textSecondary">
                   {o.customer?.name}
-                  {o.started_at ? ` · ${formatDuration(o.started_at)} on site` : ''}
+                  {o.started_at ? ` · ${t('complete.onSite', { duration: formatDuration(o.started_at) })}` : ''}
                 </AppText>
               </View>
             </View>
           ) : null}
 
           <TextField
-            label="Work performed / notes"
-            placeholder="What did you do? Parts replaced, follow-ups…"
+            label={t('complete.notes')}
+            placeholder={t('complete.notesPlaceholder')}
             value={notesValue}
             onChangeText={setNotes}
             multiline
@@ -78,14 +80,14 @@ export default function CompleteWorkOrderScreen() {
             textAlignVertical="top"
           />
 
-          <Card title="Customer signature">
+          <Card title={t('complete.signature')}>
             <SignaturePad ref={pad} onDrawingChange={setDrawing} onChange={setHasSignature} />
             <View style={styles.signatureFooter}>
               <AppText variant="caption" color="textMuted" style={styles.flex}>
-                By signing, the customer confirms the work was completed.
+                {t('complete.confirm')}
               </AppText>
               <Button
-                title="Clear"
+                title={t('complete.clear')}
                 variant="ghost"
                 fullWidth={false}
                 disabled={!hasSignature}
@@ -104,7 +106,7 @@ export default function CompleteWorkOrderScreen() {
           ) : null}
 
           <Button
-            title="Complete job"
+            title={t('complete.title')}
             icon="checkmark-done"
             loading={submitting}
             disabled={!hasSignature}

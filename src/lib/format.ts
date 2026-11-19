@@ -1,19 +1,30 @@
-/** Date/time helpers. Uses Intl (available in Hermes) so output follows the device locale. */
+/** Date/time helpers. The locale follows the language chosen in Profile (see PreferencesProvider). */
 
-const timeFmt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
-const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+let locale = 'en-US';
+let timeFmt = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' });
+let dayFmt = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' });
+
+export function setFormatLocale(next: string) {
+  if (next === locale) return;
+  locale = next;
+  timeFmt = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' });
+  dayFmt = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' });
+}
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 }
 
+type DayLabels = { today: string; tomorrow: string; yesterday: string; notScheduled: string };
+const EN_LABELS: DayLabels = { today: 'Today', tomorrow: 'Tomorrow', yesterday: 'Yesterday', notScheduled: 'Not scheduled' };
+
 /** "Today, 9:30 AM" / "Tomorrow, 2:00 PM" / "Mon, Nov 16, 8:00 AM" */
-export function formatSchedule(iso: string | null): string {
-  if (!iso) return 'Not scheduled';
+export function formatSchedule(iso: string | null, labels: DayLabels = EN_LABELS): string {
+  if (!iso) return labels.notScheduled;
   const d = new Date(iso);
   const diffDays = Math.round((startOfDay(d) - startOfDay(new Date())) / 86_400_000);
   const day =
-    diffDays === 0 ? 'Today' : diffDays === 1 ? 'Tomorrow' : diffDays === -1 ? 'Yesterday' : dayFmt.format(d);
+    diffDays === 0 ? labels.today : diffDays === 1 ? labels.tomorrow : diffDays === -1 ? labels.yesterday : dayFmt.format(d);
   return `${day}, ${timeFmt.format(d)}`;
 }
 
@@ -33,4 +44,13 @@ export function formatDuration(startIso: string | null, endIso: string | null = 
 
 export function isToday(iso: string | null): boolean {
   return !!iso && startOfDay(new Date(iso)) === startOfDay(new Date());
+}
+
+export function initials(name: string | null | undefined) {
+  return (name ?? '?')
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 }

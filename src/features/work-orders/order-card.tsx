@@ -8,10 +8,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Radius, Spacing, StatusColors } from '@/constants/theme';
 import type { WorkOrder } from '@/features/work-orders/api';
 import { useTheme } from '@/hooks/use-theme';
+import { useScheduleLabels } from '@/hooks/use-schedule-labels';
 import { formatSchedule } from '@/lib/format';
+import { useT } from '@/providers/preferences-provider';
 
 export function OrderCard({ order }: { order: WorkOrder }) {
   const theme = useTheme();
+  const t = useT();
+  const labels = useScheduleLabels();
   const accent = StatusColors[order.status].color;
   const done = order.status === 'completed' || order.status === 'cancelled';
 
@@ -19,7 +23,7 @@ export function OrderCard({ order }: { order: WorkOrder }) {
       <Pressable
         onPress={() => router.push({ pathname: '/orders/[id]', params: { id: order.id } })}
         accessibilityRole="button"
-        accessibilityLabel={`${order.title}, ${StatusColors[order.status].label}`}
+        accessibilityLabel={`${order.title}, ${t(`status.${order.status}`)}`}
         style={({ pressed }) => [
           styles.card,
           {
@@ -54,7 +58,7 @@ export function OrderCard({ order }: { order: WorkOrder }) {
             <View style={styles.meta}>
               <Ionicons name="time-outline" size={15} color={theme.textSecondary} />
               <AppText variant="caption" color="textSecondary">
-                {formatSchedule(order.scheduled_for)}
+                {formatSchedule(order.scheduled_for, labels)}
               </AppText>
             </View>
             <StatusBadge status={order.status} />

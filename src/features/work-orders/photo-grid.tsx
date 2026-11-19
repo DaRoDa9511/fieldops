@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Radius, Spacing } from '@/constants/theme';
 import type { WorkOrderPhoto } from '@/features/work-orders/api';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/providers/preferences-provider';
 
 const TILE = 96;
 
@@ -21,6 +22,7 @@ type Props = {
 /** Thumbnail grid with tap-to-preview. Uploading photos render as skeleton tiles. */
 export function PhotoGrid({ photos, uploading, loading }: Props) {
   const theme = useTheme();
+  const t = useT();
   const [preview, setPreview] = useState<string | null>(null);
 
   if (loading) {
@@ -38,7 +40,7 @@ export function PhotoGrid({ photos, uploading, loading }: Props) {
       <View style={[styles.empty, { borderColor: theme.border }]}>
         <Ionicons name="images-outline" size={22} color={theme.textMuted} />
         <AppText variant="caption" color="textMuted">
-          No photos yet — add before/after shots of the job.
+          {t('detail.noPhotos')}
         </AppText>
       </View>
     );

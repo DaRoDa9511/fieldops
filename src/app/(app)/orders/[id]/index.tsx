@@ -23,12 +23,16 @@ import {
 } from '@/features/work-orders/api';
 import { PhotoGrid } from '@/features/work-orders/photo-grid';
 import { errorMessage, useQuery } from '@/hooks/use-query';
+import { useScheduleLabels } from '@/hooks/use-schedule-labels';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDuration, formatSchedule, formatTime } from '@/lib/format';
+import { useT } from '@/providers/preferences-provider';
 
 export default function WorkOrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
+  const t = useT();
+  const labels = useScheduleLabels();
 
   const order = useQuery(() => fetchWorkOrder(id), [id]);
   const photos = useQuery(() => fetchPhotos(id), [id]);
@@ -73,7 +77,11 @@ export default function WorkOrderDetailScreen() {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      setActionError(`Allow ${source === 'camera' ? 'camera' : 'photo library'} access in Settings to attach photos.`);
+      setActionError(
+        t('detail.permission', {
+          what: t(source === 'camera' ? 'detail.permissionCamera' : 'detail.permissionLibrary'),
+        }),
+      );
       return;
     }
 
@@ -96,7 +104,7 @@ export default function WorkOrderDetailScreen() {
         setUploading((n) => n - 1);
       }
     } catch (e) {
-      setActionError(`Photo upload failed: ${errorMessage(e)}`);
+      setActionError(t('detail.uploadFailed', { error: errorMessage(e) }));
     } finally {
       setUploading(0);
       photos.reload();
@@ -109,7 +117,7 @@ export default function WorkOrderDetailScreen() {
   if (order.status === 'error' || !o) {
     return (
       <SafeAreaView style={[styles.center, { backgroundColor: theme.background }]}>
-        <ErrorState message={order.error ?? 'Work order not found.'} onRetry={order.retry} />
+        <ErrorState message={order.error ?? t('detail.notFound')} onRetry={order.retry} />
       </SafeAreaView>
     );
   }
@@ -150,16 +158,16 @@ export default function WorkOrderDetailScreen() {
         ) : null}
 
         {/* Timeline */}
-        <Card title="Schedule">
-          <InfoRow icon="calendar-outline" label="Scheduled" value={formatSchedule(o.scheduled_for)} />
-          {o.started_at ? <InfoRow icon="play-circle-outline" label="Started" value={formatTime(o.started_at)} /> : null}
+        <Card title={t('detail.schedule')}>
+          <InfoRow icon="calendar-outline" label={t('detail.scheduled')} value={formatSchedule(o.scheduled_for, labels)} />
+          {o.started_at ? <InfoRow icon="play-circle-outline" label={t('detail.started')} value={formatTime(o.started_at)} /> : null}
           {o.completed_at ? (
-            <InfoRow icon="checkmark-circle-outline" label="Completed" value={formatTime(o.completed_at)} />
+            <InfoRow icon="checkmark-circle-outline" label={t('detail.completed')} value={formatTime(o.completed_at)} />
           ) : null}
           {o.started_at && o.status !== 'cancelled' ? (
             <InfoRow
               icon="stopwatch-outline"
-              label={o.completed_at ? 'Time on site' : 'Elapsed'}
+              label={o.completed_at ? t('detail.timeOnSite') : t('detail.elapsed')}
               value={formatDuration(o.started_at, o.completed_at)}
             />
           ) : null}
@@ -168,23 +176,23 @@ export default function WorkOrderDetailScreen() {
         {o.customer ? <CustomerCard customer={o.customer} /> : null}
 
         {o.description ? (
-          <Card title="Job description">
+          <Card title={t('detail.description')}>
             <AppText>{o.description}</AppText>
           </Card>
         ) : null}
 
         {/* Photos */}
-        <Card title={`Photos${photos.data?.length ? ` (${photos.data.length})` : ''}`}>
+        <Card title={`${t('detail.photos')}${photos.data?.length ? ` (${photos.data.length})` : ''}`}>
           <PhotoGrid photos={photos.data ?? []} uploading={uploading} loading={photos.status === 'loading'} />
           {photos.status === 'error' ? (
             <AppText variant="caption" color="danger">
-              Couldn&apos;t load photos. Pull to refresh.
+              {t('detail.photosError')}
             </AppText>
           ) : null}
           {canEdit ? (
             <View style={styles.row}>
               <Button
-                title="Camera"
+                title={t('detail.camera')}
                 icon="camera-outline"
                 variant="secondary"
                 style={styles.flex}
@@ -192,7 +200,7 @@ export default function WorkOrderDetailScreen() {
                 onPress={() => handleAddPhoto('camera')}
               />
               <Button
-                title="Gallery"
+                title={t('detail.gallery')}
                 icon="images-outline"
                 variant="secondary"
                 style={styles.flex}
@@ -204,19 +212,19 @@ export default function WorkOrderDetailScreen() {
         </Card>
 
         {o.technician_notes ? (
-          <Card title="Technician notes">
+          <Card title={t('detail.notes')}>
             <AppText>{o.technician_notes}</AppText>
           </Card>
         ) : null}
 
         {o.status === 'completed' ? (
-          <Card title="Customer signature">
+          <Card title={t('detail.signature')}>
             {signatureUrl.data ? (
               <Image source={signatureUrl.data} style={styles.signature} contentFit="contain" />
             ) : o.signature_path ? (
               <Skeleton height={140} radius={Radius.md} />
             ) : (
-              <AppText color="textMuted">No signature captured.</AppText>
+              <AppText color="textMuted">{t('detail.noSignature')}</AppText>
             )}
           </Card>
         ) : null}
@@ -227,10 +235,10 @@ export default function WorkOrderDetailScreen() {
         <SafeAreaView edges={['bottom']} style={[styles.actionBar, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <View style={styles.actionInner}>
             {o.status === 'pending' ? (
-              <Button title="Start job" icon="play" loading={starting} onPress={handleStart} />
+              <Button title={t('detail.startJob')} icon="play" loading={starting} onPress={handleStart} />
             ) : (
               <Button
-                title="Complete job"
+                title={t('detail.completeJob')}
                 icon="checkmark-circle"
                 onPress={() => router.push({ pathname: '/orders/[id]/complete', params: { id } })}
               />
@@ -265,6 +273,7 @@ function InfoRow({
 
 function CustomerCard({ customer }: { customer: Customer }) {
   const theme = useTheme();
+  const t = useT();
 
   function openMaps() {
     const hasCoords = customer.latitude != null && customer.longitude != null;
@@ -278,7 +287,7 @@ function CustomerCard({ customer }: { customer: Customer }) {
   }
 
   return (
-    <Card title="Customer">
+    <Card title={t('detail.customer')}>
       <View style={styles.customerHead}>
         <View style={[styles.customerIcon, { backgroundColor: theme.primarySoft }]}>
           <Ionicons name="business" size={20} color={theme.primary} />
@@ -293,10 +302,10 @@ function CustomerCard({ customer }: { customer: Customer }) {
         </View>
       </View>
       <View style={styles.row}>
-        <Button title="Directions" icon="navigate-outline" variant="secondary" style={styles.flex} onPress={openMaps} />
+        <Button title={t('detail.directions')} icon="navigate-outline" variant="secondary" style={styles.flex} onPress={openMaps} />
         {customer.phone ? (
           <Button
-            title="Call"
+            title={t('detail.call')}
             icon="call-outline"
             variant="secondary"
             style={styles.flex}

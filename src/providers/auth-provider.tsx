@@ -26,12 +26,15 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Maps Supabase auth errors to messages a technician can act on. */
+/**
+ * Maps Supabase auth errors to translation keys (see src/i18n) so the UI can show an
+ * actionable message in the user's language. Unknown errors pass through verbatim.
+ */
 function friendlyAuthError(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes('invalid login credentials')) return 'Wrong email or password.';
-  if (m.includes('email not confirmed')) return 'Please confirm your email before signing in.';
-  if (m.includes('network') || m.includes('fetch')) return 'No connection. Check your internet and try again.';
+  if (m.includes('invalid login credentials')) return 'auth.wrongCredentials';
+  if (m.includes('email not confirmed')) return 'auth.unconfirmed';
+  if (m.includes('network') || m.includes('fetch')) return 'common.noConnection';
   return message;
 }
 

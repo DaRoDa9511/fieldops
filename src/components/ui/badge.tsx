@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/app-text';
 import { PriorityColors, Radius, Spacing, StatusColors } from '@/constants/theme';
+import { useT } from '@/providers/preferences-provider';
 import type { Enums } from '@/types/database';
 
 /** Small pill with a colored dot; background is the same hue at low alpha so it works in both modes. */
@@ -17,13 +18,13 @@ export function Badge({ label, color }: { label: string; color: string }) {
 }
 
 export function StatusBadge({ status }: { status: Enums<'order_status'> }) {
-  const s = StatusColors[status];
-  return <Badge label={s.label} color={s.color} />;
+  const t = useT();
+  return <Badge label={t(`status.${status}`)} color={StatusColors[status].color} />;
 }
 
 export function PriorityBadge({ priority }: { priority: Enums<'order_priority'> }) {
-  const p = PriorityColors[priority];
-  return <Badge label={p.label} color={p.color} />;
+  const t = useT();
+  return <Badge label={t(`priority.${priority}`)} color={PriorityColors[priority].color} />;
 }
 
 const styles = StyleSheet.create({

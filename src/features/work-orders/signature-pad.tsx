@@ -5,6 +5,7 @@ import Svg, { Path } from 'react-native-svg';
 import { AppText } from '@/components/ui/app-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/providers/preferences-provider';
 
 const INK = '#101828';
 const STROKE_WIDTH = 3;
@@ -32,6 +33,7 @@ export const SignaturePad = forwardRef<SignaturePadHandle, Props>(function Signa
   ref,
 ) {
   const theme = useTheme();
+  const t = useT();
   const [strokes, setStrokes] = useState<string[]>([]);
   const [current, setCurrent] = useState('');
   const currentRef = useRef('');
@@ -127,7 +129,7 @@ export const SignaturePad = forwardRef<SignaturePadHandle, Props>(function Signa
       {empty ? (
         <View pointerEvents="none" style={styles.placeholder}>
           <AppText variant="caption" style={styles.placeholderText}>
-            Customer signs here
+            {t('complete.signHere')}
           </AppText>
         </View>
       ) : null}

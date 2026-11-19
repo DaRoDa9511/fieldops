@@ -6,6 +6,7 @@ import { AppText } from '@/components/ui/app-text';
 import { Button } from '@/components/ui/button';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/providers/preferences-provider';
 
 type StateViewProps = {
   icon: ComponentProps<typeof Ionicons>['name'];
@@ -47,13 +48,14 @@ export function EmptyState(props: Omit<StateViewProps, 'tone'>) {
 }
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  const t = useT();
   return (
     <StateView
       icon="cloud-offline-outline"
       tone="danger"
-      title="Something went wrong"
+      title={t('common.somethingWrong')}
       message={message}
-      actionLabel={onRetry ? 'Try again' : undefined}
+      actionLabel={onRetry ? t('common.retry') : undefined}
       onAction={onRetry}
     />
   );

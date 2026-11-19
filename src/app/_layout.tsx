@@ -5,14 +5,17 @@ import { useEffect } from 'react';
 
 import { useTheme } from '@/hooks/use-theme';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
+import { PreferencesProvider, usePreferences } from '@/providers/preferences-provider';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootNavigator />
-    </AuthProvider>
+    <PreferencesProvider>
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
+    </PreferencesProvider>
   );
 }
 
@@ -22,13 +25,17 @@ export default function RootLayout() {
  */
 function RootNavigator() {
   const { session, isLoading } = useAuth();
+  const { ready } = usePreferences();
   const theme = useTheme();
+  const booting = isLoading || !ready;
 
   useEffect(() => {
-    if (!isLoading) SplashScreen.hideAsync();
-  }, [isLoading]);
+    if (!booting) SplashScreen.hideAsync();
+  }, [booting]);
 
-  if (isLoading) return null; // native splash stays visible while the session is restored
+  // Native splash stays visible while the session and saved preferences are restored,
+  // so the user never sees a flash of the wrong theme or the login screen.
+  if (booting) return null;
 
   const navTheme = theme.scheme === 'dark' ? DarkTheme : DefaultTheme;
 
