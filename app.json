@@ -34,6 +34,13 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FieldOps needs access to your photos to attach job pictures to work orders.",
+          "cameraPermission": "FieldOps uses the camera to take job photos and scan invoices."
+        }
       ]
     ],
     "experiments": {
