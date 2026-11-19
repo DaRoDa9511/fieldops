@@ -8,7 +8,6 @@
     "scheme": "fieldops",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.drdsoftware.fieldops"
     },
     "android": {
@@ -32,7 +31,11 @@
         {
           "backgroundColor": "#0B1220",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 180,
+          "dark": {
+            "backgroundColor": "#070B14",
+            "image": "./assets/images/splash-icon.png"
+          }
         }
       ],
       [
