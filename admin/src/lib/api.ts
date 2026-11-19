@@ -86,7 +86,7 @@ export async function deleteCustomer(id: string) {
   const { error } = await supabase.from('customers').delete().eq('id', id)
   if (error) {
     throw new Error(
-      error.code === '23503' ? 'This customer has work orders. Reassign or cancel them first.' : error.message,
+      error.code === '23503' ? 'customers.hasOrders' : error.message,
     )
   }
 }

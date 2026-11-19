@@ -4,14 +4,18 @@ import { useNavigate, useSearchParams } from 'react-router'
 
 import { OrderFormModal } from '@/components/OrderFormModal'
 import { Avatar, Button, EmptyState, ErrorState, PageHeader, PriorityBadge, Skeleton, StatusBadge, cx } from '@/components/ui'
+import { useDayLabels } from '@/hooks/useLabels'
 import { useQuery } from '@/hooks/useQuery'
+import { useT } from '@/i18n/I18nProvider'
 import { fetchTechnicians, fetchWorkOrders } from '@/lib/api'
-import { PRIORITIES, PRIORITY_META, STATUSES, STATUS_META } from '@/lib/constants'
+import { PRIORITIES, STATUSES } from '@/lib/constants'
 import { formatSchedule } from '@/lib/format'
 import { useRealtime } from '@/realtime/RealtimeProvider'
 
 export function WorkOrders() {
   const navigate = useNavigate()
+  const t = useT()
+  const labels = useDayLabels()
   const { version, lastChangedId } = useRealtime()
   const orders = useQuery(fetchWorkOrders, [version])
   const techs = useQuery(fetchTechnicians, [])
@@ -48,11 +52,11 @@ export function WorkOrders() {
   return (
     <>
       <PageHeader
-        title="Work orders"
-        subtitle={orders.data ? `${filtered.length} of ${orders.data.length} orders` : 'Loading…'}
+        title={t('orders.title')}
+        subtitle={orders.data ? t('orders.count', { shown: filtered.length, total: orders.data.length }) : t('common.loading')}
         actions={
           <Button icon={Plus} onClick={() => setCreating(true)}>
-            New work order
+            {t('orders.new')}
           </Button>
         }
       />
@@ -62,30 +66,30 @@ export function WorkOrders() {
           <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
           <input
             className="input pl-9"
-            placeholder="Search code, title, customer, technician…"
+            placeholder={t('orders.search')}
             value={q}
             onChange={(e) => setParam('q', e.target.value)}
           />
         </div>
         <select className="input w-auto" value={status} onChange={(e) => setParam('status', e.target.value)} aria-label="Status">
-          <option value="">All statuses</option>
+          <option value="">{t('orders.allStatuses')}</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
-              {STATUS_META[s].label}
+              {t(`status.${s}`)}
             </option>
           ))}
         </select>
         <select className="input w-auto" value={priority} onChange={(e) => setParam('priority', e.target.value)} aria-label="Priority">
-          <option value="">All priorities</option>
+          <option value="">{t('orders.allPriorities')}</option>
           {PRIORITIES.map((p) => (
             <option key={p} value={p}>
-              {PRIORITY_META[p].label}
+              {t(`priority.${p}`)}
             </option>
           ))}
         </select>
         <select className="input w-auto" value={assignee} onChange={(e) => setParam('assignee', e.target.value)} aria-label="Technician">
-          <option value="">All technicians</option>
-          <option value="unassigned">Unassigned</option>
+          <option value="">{t('orders.allTechs')}</option>
+          <option value="unassigned">{t('common.unassigned')}</option>
           {techs.data?.map((t) => (
             <option key={t.id} value={t.id}>
               {t.full_name}
@@ -94,7 +98,7 @@ export function WorkOrders() {
         </select>
         {hasFilters ? (
           <Button variant="ghost" onClick={() => setParams({}, { replace: true })}>
-            Clear
+            {t('common.clear')}
           </Button>
         ) : null}
       </div>
@@ -111,16 +115,16 @@ export function WorkOrders() {
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={ClipboardList}
-            title={hasFilters ? 'No matching work orders' : 'No work orders yet'}
-            message={hasFilters ? 'Try a different search or clear the filters.' : 'Create the first job and assign it to a technician.'}
+            title={hasFilters ? t('orders.noMatch') : t('orders.empty')}
+            message={hasFilters ? t('orders.noMatchMsg') : t('orders.emptyMsg')}
             action={
               hasFilters ? (
                 <Button variant="secondary" onClick={() => setParams({}, { replace: true })}>
-                  Clear filters
+                  {t('orders.clearFilters')}
                 </Button>
               ) : (
                 <Button icon={Plus} onClick={() => setCreating(true)}>
-                  New work order
+                  {t('orders.new')}
                 </Button>
               )
             }
@@ -130,12 +134,12 @@ export function WorkOrders() {
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:border-navy-700 dark:bg-navy-800/50">
                 <tr>
-                  <th className="px-5 py-3">Order</th>
-                  <th className="px-5 py-3">Customer</th>
-                  <th className="px-5 py-3">Technician</th>
-                  <th className="px-5 py-3">Scheduled</th>
-                  <th className="px-5 py-3">Priority</th>
-                  <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3">{t('orders.col.order')}</th>
+                  <th className="px-5 py-3">{t('orders.col.customer')}</th>
+                  <th className="px-5 py-3">{t('orders.col.tech')}</th>
+                  <th className="px-5 py-3">{t('orders.col.scheduled')}</th>
+                  <th className="px-5 py-3">{t('orders.col.priority')}</th>
+                  <th className="px-5 py-3">{t('orders.col.status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-navy-700">
@@ -159,10 +163,10 @@ export function WorkOrders() {
                           {o.assignee.full_name}
                         </span>
                       ) : (
-                        <span className="text-xs font-medium text-amber-600">Unassigned</span>
+                        <span className="text-xs font-medium text-amber-600">{t('common.unassigned')}</span>
                       )}
                     </td>
-                    <td className="px-5 py-3 whitespace-nowrap text-slate-600 dark:text-slate-300">{formatSchedule(o.scheduled_for)}</td>
+                    <td className="px-5 py-3 whitespace-nowrap text-slate-600 dark:text-slate-300">{formatSchedule(o.scheduled_for, labels)}</td>
                     <td className="px-5 py-3">
                       <PriorityBadge priority={o.priority} />
                     </td>

@@ -1,13 +1,23 @@
-const dateTime = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
-})
-const time = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' })
-const day = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-const money = (currency: string) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 2 })
+/** Formatting helpers. The locale follows the language picked in the sidebar (I18nProvider). */
+
+let locale = 'en-US'
+let dateTime = makeDateTime()
+let time = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' })
+let day = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' })
+let longDate = new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'long', day: 'numeric' })
+
+function makeDateTime() {
+  return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+}
+
+export function setFormatLocale(next: string) {
+  if (next === locale) return
+  locale = next
+  dateTime = makeDateTime()
+  time = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' })
+  day = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' })
+  longDate = new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'long', day: 'numeric' })
+}
 
 export function startOfDay(d = new Date()) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
@@ -17,19 +27,24 @@ export function isSameDay(iso: string | null, ref = new Date()) {
   return !!iso && startOfDay(new Date(iso)).getTime() === startOfDay(ref).getTime()
 }
 
+export type DayLabels = { today: string; tomorrow: string; yesterday: string; notScheduled: string }
+const EN: DayLabels = { today: 'Today', tomorrow: 'Tomorrow', yesterday: 'Yesterday', notScheduled: 'Not scheduled' }
+
 /** "Today, 9:30 AM" · "Tomorrow, 2:00 PM" · "Nov 16, 8:00 AM" */
-export function formatSchedule(iso: string | null) {
-  if (!iso) return 'Not scheduled'
+export function formatSchedule(iso: string | null, labels: DayLabels = EN) {
+  if (!iso) return labels.notScheduled
   const d = new Date(iso)
   const diff = Math.round((startOfDay(d).getTime() - startOfDay().getTime()) / 86_400_000)
-  if (diff === 0) return `Today, ${time.format(d)}`
-  if (diff === 1) return `Tomorrow, ${time.format(d)}`
-  if (diff === -1) return `Yesterday, ${time.format(d)}`
+  if (diff === 0) return `${labels.today}, ${time.format(d)}`
+  if (diff === 1) return `${labels.tomorrow}, ${time.format(d)}`
+  if (diff === -1) return `${labels.yesterday}, ${time.format(d)}`
   return dateTime.format(d)
 }
 
+export const formatTime = (iso: string | null) => (iso ? time.format(new Date(iso)) : '—')
 export const formatDateTime = (iso: string | null) => (iso ? dateTime.format(new Date(iso)) : '—')
 export const formatDay = (d: Date) => day.format(d)
+export const formatLongDate = (d: Date) => longDate.format(d)
 
 export function formatMinutes(mins: number | null) {
   if (mins == null || Number.isNaN(mins)) return '—'
@@ -46,19 +61,19 @@ export function minutesBetween(a: string | null, b: string | null) {
 export function formatMoney(value: number | null, currency = 'USD') {
   if (value == null) return '—'
   try {
-    return money(currency).format(value)
+    return new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 2 }).format(value)
   } catch {
     return `${value.toFixed(2)} ${currency}`
   }
 }
 
-/** "5m ago", "2h ago", "3d ago" */
-export function timeAgo(iso: string) {
+/** "5m", "2h", "3d" ago — compact and language-neutral. */
+export function timeAgo(iso: string, justNow = 'just now') {
   const s = (Date.now() - new Date(iso).getTime()) / 1000
-  if (s < 60) return 'just now'
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
-  return `${Math.floor(s / 86400)}d ago`
+  if (s < 60) return justNow
+  if (s < 3600) return `${Math.floor(s / 60)}m`
+  if (s < 86400) return `${Math.floor(s / 3600)}h`
+  return `${Math.floor(s / 86400)}d`
 }
 
 export const initials = (name: string | null | undefined) =>

@@ -4,6 +4,7 @@ import { BrowserRouter, Link, Route, Routes } from 'react-router'
 
 import { AuthProvider, useAuth } from '@/auth/AuthProvider'
 import { Layout } from '@/components/Layout'
+import { I18nProvider, useT } from '@/i18n/I18nProvider'
 import { EmptyState } from '@/components/ui'
 import { Login } from '@/pages/Login'
 import { RealtimeProvider } from '@/realtime/RealtimeProvider'
@@ -23,17 +24,20 @@ const spinner = (
 
 export function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Gate />
-      </BrowserRouter>
-    </AuthProvider>
+    <I18nProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Gate />
+        </BrowserRouter>
+      </AuthProvider>
+    </I18nProvider>
   )
 }
 
 /** Signed-out users only ever see the login; signed-in admins get the realtime-enabled app. */
 function Gate() {
   const { session, loading } = useAuth()
+  const t = useT()
 
   if (loading) {
     return spinner
@@ -54,11 +58,11 @@ function Gate() {
             path="*"
             element={
               <EmptyState
-                title="Page not found"
-                message="That page doesn't exist."
+                title={t('common.notFound')}
+                message={t('common.notFoundMsg')}
                 action={
                   <Link to="/" className="text-sm font-medium text-brand-500">
-                    Back to dashboard
+                    {t('common.backToDashboard')}
                   </Link>
                 }
               />

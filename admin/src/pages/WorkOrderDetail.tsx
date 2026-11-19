@@ -31,7 +31,9 @@ import {
   Skeleton,
   StatusBadge,
 } from '@/components/ui'
+import { useDayLabels } from '@/hooks/useLabels'
 import { errorMessage, useQuery } from '@/hooks/useQuery'
+import { useT } from '@/i18n/I18nProvider'
 import {
   fetchDocuments,
   fetchPhotos,
@@ -47,6 +49,8 @@ import { useRealtime } from '@/realtime/RealtimeProvider'
 
 export function WorkOrderDetail() {
   const { id = '' } = useParams()
+  const t = useT()
+  const labels = useDayLabels()
   const { version } = useRealtime()
   const order = useQuery(() => fetchWorkOrder(id), [id, version])
   const photos = useQuery(() => fetchPhotos(id), [id, version])
@@ -66,7 +70,7 @@ export function WorkOrderDetail() {
   const o = order.data
 
   async function cancelOrder() {
-    if (!window.confirm(`Cancel ${o.code}? The technician will no longer see it as active.`)) return
+    if (!window.confirm(t('detail.confirmCancel', { code: o.code }))) return
     setCancelling(true)
     setActionError(null)
     try {
@@ -84,7 +88,7 @@ export function WorkOrderDetail() {
   return (
     <>
       <Link to="/orders" className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
-        <ArrowLeft className="size-4" /> Work orders
+        <ArrowLeft className="size-4" /> {t('detail.back')}
       </Link>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -99,10 +103,10 @@ export function WorkOrderDetail() {
         {editable ? (
           <div className="flex gap-2">
             <Button variant="secondary" icon={Pencil} onClick={() => setEditing(true)}>
-              Edit / assign
+              {t('detail.edit')}
             </Button>
             <Button variant="ghost" icon={Ban} loading={cancelling} onClick={cancelOrder}>
-              Cancel order
+              {t('detail.cancelOrder')}
             </Button>
           </div>
         ) : null}
@@ -115,17 +119,17 @@ export function WorkOrderDetail() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <Section title="Job description">
-            <p className="text-sm whitespace-pre-line text-slate-700 dark:text-slate-300">{o.description || 'No description.'}</p>
+          <Section title={t('detail.description')}>
+            <p className="text-sm whitespace-pre-line text-slate-700 dark:text-slate-300">{o.description || t('detail.noDescription')}</p>
           </Section>
 
           {o.technician_notes ? (
-            <Section title="Technician notes">
+            <Section title={t('detail.notes')}>
               <p className="text-sm whitespace-pre-line text-slate-700 dark:text-slate-300">{o.technician_notes}</p>
             </Section>
           ) : null}
 
-          <Section title={`Photos${photos.data?.length ? ` · ${photos.data.length}` : ''}`}>
+          <Section title={`${t('detail.photos')}${photos.data?.length ? ` · ${photos.data.length}` : ''}`}>
             {photos.status === 'loading' ? (
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
                 {[0, 1, 2].map((i) => (
@@ -143,19 +147,19 @@ export function WorkOrderDetail() {
                       <img src={p.url} alt={p.caption ?? 'Job photo'} loading="lazy" className="size-full object-cover transition group-hover:scale-105" />
                     ) : null}
                     <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1 text-left text-[11px] text-white">
-                      {timeAgo(p.created_at)}
+                      {timeAgo(p.created_at, t('date.justNow'))}
                     </span>
                   </button>
                 ))}
               </div>
             ) : (
               <p className="flex items-center gap-2 text-sm text-slate-500">
-                <ImageIcon className="size-4" /> No photos uploaded yet.
+                <ImageIcon className="size-4" /> {t('detail.noPhotos')}
               </p>
             )}
           </Section>
 
-          <Section title="Scanned documents" subtitle="Invoices & delivery notes read by AI from the technician's camera">
+          <Section title={t('detail.docs')} subtitle={t('detail.docsSub')}>
             {docs.status === 'loading' ? (
               <Skeleton className="h-20" />
             ) : docs.data?.length ? (
@@ -165,15 +169,15 @@ export function WorkOrderDetail() {
                 ))}
               </div>
             ) : (
-              <EmptyState icon={FileScan} title="No documents yet" message="When the technician scans an invoice on the phone, the extracted data appears here live." />
+              <EmptyState icon={FileScan} title={t('detail.noDocs')} message={t('detail.noDocsMsg')} />
             )}
           </Section>
         </div>
 
         <div className="space-y-4">
-          <Section title="Details">
+          <Section title={t('detail.details')}>
             <dl className="space-y-4 text-sm">
-              <Row icon={Building2} label="Customer">
+              <Row icon={Building2} label={t('detail.customer')}>
                 <p className="font-semibold">{o.customer?.name ?? '—'}</p>
                 {o.customer?.address ? (
                   <a
@@ -191,49 +195,49 @@ export function WorkOrderDetail() {
                   </a>
                 ) : null}
               </Row>
-              <Row icon={CircleDot} label="Technician">
+              <Row icon={CircleDot} label={t('detail.technician')}>
                 {o.assignee ? (
                   <span className="flex items-center gap-2 font-semibold">
                     <Avatar name={o.assignee.full_name} size={24} /> {o.assignee.full_name}
                   </span>
                 ) : (
                   <button onClick={() => setEditing(true)} className="font-semibold text-amber-600 hover:underline">
-                    Unassigned — assign now
+                    {t('detail.assignNow')}
                   </button>
                 )}
               </Row>
-              <Row icon={CalendarClock} label="Scheduled">
-                <p className="font-semibold">{formatSchedule(o.scheduled_for)}</p>
+              <Row icon={CalendarClock} label={t('detail.scheduled')}>
+                <p className="font-semibold">{formatSchedule(o.scheduled_for, labels)}</p>
               </Row>
             </dl>
           </Section>
 
-          <Section title="Timeline">
+          <Section title={t('detail.timeline')}>
             <ol className="relative space-y-5 border-l border-slate-200 pl-5 text-sm dark:border-navy-700">
-              <TimelineItem icon={CircleDot} color="#98A2B3" title="Created" time={formatDateTime(o.created_at)} done />
-              <TimelineItem icon={PlayCircle} color="#2F6BFF" title="Started on site" time={formatDateTime(o.started_at)} done={!!o.started_at} />
+              <TimelineItem icon={CircleDot} color="#98A2B3" title={t('detail.created')} pendingLabel={t('detail.pendingStep')} time={formatDateTime(o.created_at)} done />
+              <TimelineItem icon={PlayCircle} color="#2F6BFF" title={t('detail.started')} pendingLabel={t('detail.pendingStep')} time={formatDateTime(o.started_at)} done={!!o.started_at} />
               {o.status === 'cancelled' ? (
-                <TimelineItem icon={Ban} color="#98A2B3" title="Cancelled" time={formatDateTime(o.updated_at)} done />
+                <TimelineItem icon={Ban} color="#98A2B3" title={t('detail.cancelled')} pendingLabel={t('detail.pendingStep')} time={formatDateTime(o.updated_at)} done />
               ) : (
-                <TimelineItem icon={CheckCircle2} color="#12B76A" title="Completed" time={formatDateTime(o.completed_at)} done={!!o.completed_at} />
+                <TimelineItem icon={CheckCircle2} color="#12B76A" title={t('detail.completed')} pendingLabel={t('detail.pendingStep')} time={formatDateTime(o.completed_at)} done={!!o.completed_at} />
               )}
             </ol>
             {onSite != null ? (
               <p className="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-navy-800">
-                Time on site: <b>{formatMinutes(onSite)}</b>
-                {o.status === 'in_progress' ? ' (ongoing)' : ''}
+                {t('detail.timeOnSite')} <b>{formatMinutes(onSite)}</b>
+                {o.status === 'in_progress' ? ` ${t('detail.ongoing')}` : ''}
               </p>
             ) : null}
           </Section>
 
           {o.status === 'completed' ? (
-            <Section title="Customer signature">
+            <Section title={t('detail.signature')}>
               {signature.data ? (
                 <img src={signature.data} alt="Customer signature" className="h-36 w-full rounded-lg border border-slate-200 bg-white object-contain dark:border-navy-700" />
               ) : o.signature_path ? (
                 <Skeleton className="h-36" />
               ) : (
-                <p className="text-sm text-slate-500">No signature captured.</p>
+                <p className="text-sm text-slate-500">{t('detail.noSignature')}</p>
               )}
             </Section>
           ) : null}
@@ -265,6 +269,7 @@ export function WorkOrderDetail() {
 }
 
 function DocumentRow({ doc, onChange }: { doc: ScannedDocument; onChange: () => void }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const items = (Array.isArray(doc.line_items) ? doc.line_items : []) as LineItem[]
@@ -289,10 +294,10 @@ function DocumentRow({ doc, onChange }: { doc: ScannedDocument; onChange: () => 
       <button onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-4 px-4 py-3 text-left">
         <FileScan className="size-5 shrink-0 text-violet-500" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{doc.vendor_name ?? (doc.status === 'processing' ? 'Reading document…' : 'Unknown vendor')}</p>
+          <p className="truncate text-sm font-semibold">{doc.vendor_name ?? (doc.status === 'processing' ? t('detail.readingDoc') : t('detail.unknownVendor'))}</p>
           <p className="text-xs text-slate-500">
             {doc.invoice_number ? `#${doc.invoice_number} · ` : ''}
-            {doc.invoice_date ?? timeAgo(doc.created_at)}
+            {doc.invoice_date ?? timeAgo(doc.created_at, t('date.justNow'))}
           </p>
         </div>
         <span className="text-sm font-semibold">{formatMoney(doc.total_amount, doc.currency ?? 'USD')}</span>
@@ -305,10 +310,10 @@ function DocumentRow({ doc, onChange }: { doc: ScannedDocument; onChange: () => 
             <table className="w-full text-sm">
               <thead className="text-xs text-slate-500">
                 <tr>
-                  <th className="py-1 text-left font-medium">Item</th>
-                  <th className="py-1 text-right font-medium">Qty</th>
-                  <th className="py-1 text-right font-medium">Unit</th>
-                  <th className="py-1 text-right font-medium">Amount</th>
+                  <th className="py-1 text-left font-medium">{t('detail.item')}</th>
+                  <th className="py-1 text-right font-medium">{t('detail.qty')}</th>
+                  <th className="py-1 text-right font-medium">{t('detail.unit')}</th>
+                  <th className="py-1 text-right font-medium">{t('detail.amount')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -323,20 +328,20 @@ function DocumentRow({ doc, onChange }: { doc: ScannedDocument; onChange: () => 
               </tbody>
             </table>
           ) : (
-            <p className="text-sm text-slate-500">No line items extracted.</p>
+            <p className="text-sm text-slate-500">{t('detail.noItems')}</p>
           )}
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
             <span className="text-slate-500">
-              Subtotal {formatMoney(doc.subtotal, doc.currency ?? 'USD')} · Tax {formatMoney(doc.tax, doc.currency ?? 'USD')}
-              {doc.confidence != null ? ` · AI confidence ${Math.round(Number(doc.confidence) * 100)}%` : ''}
+              {t('detail.subtotal')} {formatMoney(doc.subtotal, doc.currency ?? 'USD')} · {t('detail.tax')} {formatMoney(doc.tax, doc.currency ?? 'USD')}
+              {doc.confidence != null ? ` · ${t('detail.confidence')} ${Math.round(Number(doc.confidence) * 100)}%` : ''}
             </span>
             <div className="flex gap-2">
               <Button size="sm" variant="secondary" icon={ExternalLink} onClick={openImage}>
-                Original
+                {t('detail.original')}
               </Button>
               {doc.status === 'extracted' ? (
                 <Button size="sm" icon={ShieldCheck} loading={busy} onClick={verify}>
-                  Mark verified
+                  {t('detail.verify')}
                 </Button>
               ) : null}
             </div>
@@ -369,7 +374,21 @@ function Row({ icon: Icon, label, children }: { icon: typeof Building2; label: s
   )
 }
 
-function TimelineItem({ icon: Icon, color, title, time, done }: { icon: typeof Building2; color: string; title: string; time: string; done: boolean }) {
+function TimelineItem({
+  icon: Icon,
+  color,
+  title,
+  time,
+  done,
+  pendingLabel,
+}: {
+  icon: typeof Building2
+  color: string
+  title: string
+  time: string
+  done: boolean
+  pendingLabel: string
+}) {
   return (
     <li className="relative">
       <span
@@ -378,7 +397,7 @@ function TimelineItem({ icon: Icon, color, title, time, done }: { icon: typeof B
         <Icon className="size-5" />
       </span>
       <p className={done ? 'font-medium' : 'text-slate-400'}>{title}</p>
-      <p className="text-xs text-slate-500">{done ? time : 'Pending'}</p>
+      <p className="text-xs text-slate-500">{done ? time : pendingLabel}</p>
     </li>
   )
 }

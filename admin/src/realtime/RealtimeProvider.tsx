@@ -1,6 +1,7 @@
 import { CheckCircle2, FileScan, PlayCircle, X } from 'lucide-react'
 import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react'
 
+import { useT } from '@/i18n/I18nProvider'
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/types/database'
 
@@ -28,6 +29,12 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const names = useRef(new Map<string, string>())
   const nextId = useRef(0)
+  const t = useT()
+  // The channel is created once; read the latest translator through a ref.
+  const tRef = useRef(t)
+  useEffect(() => {
+    tRef.current = t
+  }, [t])
 
   const push = useCallback((t: Omit<Toast, 'id'>) => {
     const id = ++nextId.current
@@ -39,7 +46,7 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
     supabase
       .from('profiles')
       .select('id, full_name')
-      .then(({ data }) => data?.forEach((p) => names.current.set(p.id, p.full_name ?? 'A technician')))
+      .then(({ data }) => data?.forEach((p) => p.full_name && names.current.set(p.id, p.full_name)))
 
     const channel = supabase
       .channel('admin-live')
@@ -48,22 +55,23 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
         if (payload.eventType === 'DELETE') return
         const row = payload.new as Tables<'work_orders'>
         setLastChangedId(row.id)
-        const who = (row.assigned_to && names.current.get(row.assigned_to)) || 'A technician'
+        const tr = tRef.current
+        const who = (row.assigned_to && names.current.get(row.assigned_to)) || tr('toast.aTech')
         const fresh = (iso: string | null) => !!iso && Date.now() - new Date(iso).getTime() < 15_000
         if (row.status === 'completed' && fresh(row.completed_at)) {
-          push({ kind: 'completed', title: `${row.code} completed`, body: `${who} finished “${row.title}”` })
+          push({ kind: 'completed', title: tr('toast.completed', { code: row.code }), body: tr('toast.completedBody', { who, title: row.title }) })
         } else if (row.status === 'in_progress' && fresh(row.started_at)) {
-          push({ kind: 'started', title: `${row.code} started`, body: `${who} is on site: “${row.title}”` })
+          push({ kind: 'started', title: tr('toast.started', { code: row.code }), body: tr('toast.startedBody', { who, title: row.title }) })
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'scanned_documents' }, (payload) => {
         setVersion((v) => v + 1)
         if (payload.eventType === 'INSERT') {
-          push({ kind: 'document', title: 'New document scanned', body: 'AI is extracting the invoice data…' })
+          push({ kind: 'document', title: tRef.current('toast.docNew'), body: tRef.current('toast.docNewBody') })
         } else if (payload.eventType === 'UPDATE') {
           const d = payload.new as Tables<'scanned_documents'>
           if (d.status === 'extracted') {
-            push({ kind: 'document', title: 'Invoice extracted', body: `${d.vendor_name ?? 'Vendor'} · ${d.invoice_number ?? ''}` })
+            push({ kind: 'document', title: tRef.current('toast.docDone'), body: `${d.vendor_name ?? 'Vendor'} · ${d.invoice_number ?? ''}` })
           }
         }
       })

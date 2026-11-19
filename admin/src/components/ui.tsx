@@ -9,6 +9,7 @@ import {
   type OrderPriority,
   type OrderStatus,
 } from '@/lib/constants'
+import { useT } from '@/i18n/I18nProvider'
 import { initials } from '@/lib/format'
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ')
@@ -65,9 +66,18 @@ export function Badge({ label, color }: { label: string; color: string }) {
     </span>
   )
 }
-export const StatusBadge = ({ status }: { status: OrderStatus }) => <Badge {...STATUS_META[status]} />
-export const PriorityBadge = ({ priority }: { priority: OrderPriority }) => <Badge {...PRIORITY_META[priority]} />
-export const DocStatusBadge = ({ status }: { status: DocumentStatus }) => <Badge {...DOCUMENT_STATUS_META[status]} />
+export function StatusBadge({ status }: { status: OrderStatus }) {
+  const t = useT()
+  return <Badge label={t(`status.${status}`)} color={STATUS_META[status].color} />
+}
+export function PriorityBadge({ priority }: { priority: OrderPriority }) {
+  const t = useT()
+  return <Badge label={t(`priority.${priority}`)} color={PRIORITY_META[priority].color} />
+}
+export function DocStatusBadge({ status }: { status: DocumentStatus }) {
+  const t = useT()
+  return <Badge label={t(`doc.${status}`)} color={DOCUMENT_STATUS_META[status].color} />
+}
 
 // ------------------------------------------------------------------ Avatar
 const AVATAR_COLORS = ['#2F6BFF', '#7A5AF8', '#12B76A', '#F79009', '#EE46BC', '#0BA5EC']
@@ -112,16 +122,17 @@ export function EmptyState({
 }
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  const t = useT()
   return (
     <div className="flex flex-col items-center gap-2 px-6 py-14 text-center">
       <div className="mb-2 flex size-14 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-500/10">
         <AlertTriangle className="size-6" />
       </div>
-      <p className="font-semibold">Something went wrong</p>
+      <p className="font-semibold">{t('common.error')}</p>
       <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">{message}</p>
       {onRetry ? (
         <Button variant="secondary" className="mt-3" onClick={onRetry}>
-          Try again
+          {t('common.retry')}
         </Button>
       ) : null}
     </div>

@@ -58,11 +58,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
-    if (error) return error.message === 'Invalid login credentials' ? 'Wrong email or password.' : error.message
+    // Known errors are returned as i18n keys; the login screen translates them.
+    if (error) return error.message === 'Invalid login credentials' ? 'login.wrong' : error.message
     const p = await loadProfile(data.user.id)
     if (p?.role !== 'admin') {
       await supabase.auth.signOut()
-      return 'This panel is for dispatchers and managers. Technicians use the FieldOps mobile app.'
+      return 'login.notAdmin'
     }
     setSession(data.session)
     setProfile(p)

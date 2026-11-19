@@ -3,10 +3,13 @@ import { useMemo, useState, type FormEvent } from 'react'
 
 import { Alert, Button, EmptyState, ErrorState, Field, Modal, PageHeader, Skeleton } from '@/components/ui'
 import { errorMessage, useQuery } from '@/hooks/useQuery'
+import { useT } from '@/i18n/I18nProvider'
+import { en, type TranslationKey } from '@/i18n/translations'
 import { deleteCustomer, fetchCustomers, fetchWorkOrders, saveCustomer, type Customer } from '@/lib/api'
 import { useRealtime } from '@/realtime/RealtimeProvider'
 
 export function Customers() {
+  const t = useT()
   const { version } = useRealtime()
   const customers = useQuery(fetchCustomers, [])
   const orders = useQuery(fetchWorkOrders, [version])
@@ -31,24 +34,25 @@ export function Customers() {
   )
 
   async function remove(c: Customer) {
-    if (!window.confirm(`Delete ${c.name}? This cannot be undone.`)) return
+    if (!window.confirm(t('customers.confirmDelete', { name: c.name }))) return
     setError(null)
     try {
       await deleteCustomer(c.id)
       customers.reload()
     } catch (e) {
-      setError(errorMessage(e))
+      const msg = errorMessage(e)
+      setError(msg in en ? t(msg as TranslationKey) : msg)
     }
   }
 
   return (
     <>
       <PageHeader
-        title="Customers"
-        subtitle={customers.data ? `${customers.data.length} customers` : 'Loading…'}
+        title={t('customers.title')}
+        subtitle={customers.data ? t('customers.count', { n: customers.data.length }) : t('common.loading')}
         actions={
           <Button icon={Plus} onClick={() => setEditing('new')}>
-            Add customer
+            {t('customers.add')}
           </Button>
         }
       />
@@ -60,7 +64,7 @@ export function Customers() {
 
       <div className="relative mb-4 max-w-md">
         <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
-        <input className="input pl-9" placeholder="Search customers…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="input pl-9" placeholder={t('customers.search')} value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
       {customers.status === 'error' ? (
@@ -73,7 +77,7 @@ export function Customers() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="card">
-          <EmptyState icon={Building2} title={q ? 'No matches' : 'No customers yet'} message={q ? 'Try another search.' : 'Add your first customer to start creating work orders.'} />
+          <EmptyState icon={Building2} title={q ? t('customers.noMatch') : t('customers.empty')} message={q ? t('customers.noMatchMsg') : t('customers.emptyMsg')} />
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -89,7 +93,7 @@ export function Customers() {
                     <div>
                       <p className="font-semibold">{c.name}</p>
                       <p className="text-xs text-slate-500">
-                        {counts?.open ?? 0} open · {counts?.total ?? 0} total jobs
+                        {t('customers.jobs', { open: counts?.open ?? 0, total: counts?.total ?? 0 })}
                       </p>
                     </div>
                   </div>
@@ -141,6 +145,7 @@ export function Customers() {
 }
 
 function CustomerModal({ customer, onClose, onSaved }: { customer: Customer | null; onClose: () => void; onSaved: () => void }) {
+  const t = useT()
   const [form, setForm] = useState({
     name: customer?.name ?? '',
     address: customer?.address ?? '',
@@ -180,14 +185,14 @@ function CustomerModal({ customer, onClose, onSaved }: { customer: Customer | nu
     <Modal
       open
       onClose={onClose}
-      title={customer ? `Edit ${customer.name}` : 'Add customer'}
+      title={customer ? t('customers.edit', { name: customer.name }) : t('customers.add')}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="customer-form" loading={saving}>
-            Save
+            {t('common.save')}
           </Button>
         </>
       }>
@@ -198,25 +203,25 @@ function CustomerModal({ customer, onClose, onSaved }: { customer: Customer | nu
           </div>
         ) : null}
         <div className="sm:col-span-2">
-          <Field label="Company / customer name">
+          <Field label={t('customers.name')}>
             <input className="input" required value={form.name} onChange={set('name')} />
           </Field>
         </div>
         <div className="sm:col-span-2">
-          <Field label="Address">
+          <Field label={t('customers.address')}>
             <input className="input" value={form.address} onChange={set('address')} />
           </Field>
         </div>
-        <Field label="Phone">
+        <Field label={t('customers.phone')}>
           <input className="input" type="tel" value={form.phone} onChange={set('phone')} />
         </Field>
-        <Field label="Email">
+        <Field label={t('customers.email')}>
           <input className="input" type="email" value={form.email} onChange={set('email')} />
         </Field>
-        <Field label="Latitude" hint="Optional — used for the map view">
+        <Field label={t('customers.lat')} hint={t('customers.latHint')}>
           <input className="input" type="number" step="any" min={-90} max={90} value={form.latitude} onChange={set('latitude')} />
         </Field>
-        <Field label="Longitude">
+        <Field label={t('customers.lng')}>
           <input className="input" type="number" step="any" min={-180} max={180} value={form.longitude} onChange={set('longitude')} />
         </Field>
       </form>
