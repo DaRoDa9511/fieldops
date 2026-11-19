@@ -1,0 +1,72 @@
+@import 'tailwindcss';
+
+/* Dark mode is driven by a `.dark` class on <html> (system default + manual toggle). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Design tokens — same palette as the mobile app (src/constants/theme.ts). */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --color-brand-50: #eef3ff;
+  --color-brand-100: #dce6ff;
+  --color-brand-400: #5b8cff;
+  --color-brand-500: #2f6bff;
+  --color-brand-600: #1f55e0;
+  --color-brand-700: #1a46b8;
+
+  --color-navy-950: #070b14;
+  --color-navy-900: #0b1220;
+  --color-navy-800: #121b2e;
+  --color-navy-700: #1c2740;
+  --color-navy-600: #2a3654;
+}
+
+@layer base {
+  html {
+    @apply bg-slate-50 text-slate-900 antialiased dark:bg-navy-950 dark:text-slate-100;
+  }
+  body {
+    @apply min-h-screen;
+  }
+  ::selection {
+    @apply bg-brand-500/30;
+  }
+}
+
+/* Reusable surfaces */
+@utility card {
+  @apply rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-navy-700 dark:bg-navy-900 dark:shadow-none;
+}
+
+@utility input {
+  @apply h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400
+    transition outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15
+    dark:border-navy-700 dark:bg-navy-800 dark:text-slate-100 dark:placeholder:text-slate-500;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes row-flash {
+  from {
+    background-color: rgb(47 107 255 / 0.18);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in 0.25s ease-out;
+}
+.animate-row-flash {
+  animation: row-flash 2.5s ease-out;
+}
